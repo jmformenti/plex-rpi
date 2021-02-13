@@ -66,15 +66,15 @@ cd plex-rpi
 	* **NETWORK_PLEX_IP**. Configure the IP to user for plex server (for example, 192.168.1.3).
 	* **FLEXGET_PWD**. Password for flexget.
 3. Configure transmission password.
-	1. Sets transmission password, `rpc-password` parameter in `transmission/settings.json` file.
-	2. Sets transmission password in flexget, `transmission.pwd` parameter in `flexget/variables.yml` file.
+	* Sets transmission password, `rpc-password` parameter in `transmission/settings.json` file.
+	* Sets transmission password in flexget, `transmission.pwd` parameter in `flexget/variables.yml` file.
 4. Configure flexget in `flexget/config.yml` as you need. Recommended:
-	1. Add your series in `templates.tv.series.tv`.
-	2. Add your torrent feeds in `tasks`.
+	* Add your series in `templates.tv.series.tv`.
+	* Add your torrent feeds in `tasks`.
 
 ## Executing
 
-Once installed, just run this command (inside *plex-rpi* dir) to start all containers:
+Once installed, just run this command (inside ``plex-rpi`` dir) to start all containers:
 ```
 docker-compose up -d
 ```
@@ -119,6 +119,6 @@ By default, plex try to transcode video to save network bandwith but this can pu
 For example in plex web:
 1. Go to `Settings`.
 2. Go to `Quality` section.
-    1. Turn off `Automatically Adjust Quality` check.
-    2. Put `Internet Streaming` to max value.
-    3. Put `Home Streaming` to max value.
+    * Turn off `Automatically Adjust Quality` check.
+    * Put `Internet Streaming` to max value.
+    * Put `Home Streaming` to max value.
