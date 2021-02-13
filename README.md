@@ -4,19 +4,19 @@ Build your own [plex](https://www.plex.tv/) server with [transmission](https://t
 
 Transmission media files downloads are automatically published on plex using flexget.
 
-Totally based on peladonerd [video](https://www.youtube.com/watch?v=TqVoHWjz_tI) and his forked repo.
+Totally based on peladonerd [video](https://www.youtube.com/watch?v=TqVoHWjz_tI) and his [repo](https://github.com/pablokbs/plex-rpi).
 
 Tested on Raspberry Pi 4.
 
 ## Requirements
 
-You need a running Raspberry Pi to install the docker containers.
+You need a running Raspberry Pi where install the docker containers.
 
-Here we install the Raspbian 64bits OS. Steps:
+Here we install the Raspbian 64bits OS on our Pi. Steps:
  
 1. Download latest Raspbian 64bits image from [here](https://downloads.raspberrypi.org/raspios_arm64/images/).
 2. Write the image to an SD card. Recommended: use [Raspberry Pi Imager](https://www.raspberrypi.org/software/) with `Use Custom` option.
-3. Enable ssh by default, adding an file ``ssh`` empty file to the SD card on `bootfs` partition.
+3. Enable ssh by default, adding an empty file named ``ssh`` to the SD card on `boot` partition.
 4. Connect the Pi with cable and turn on.
 5. Discover IP from your router and access via ssh. Default user ``pi`` with password ``raspberry``.
 6. Change ``pi`` user password.
@@ -25,17 +25,36 @@ passwd
 ```
 7. Update the system.
 ```
-apt update
-apt upgrade
+sudo apt update
+sudo apt upgrade
 ```
-Then you can mount an USB disk (or anything else) where store all your stuff.
+8. Install ``docker`` and ``docker-compose``.
+```
+sudo apt install docker docker-compose
+```
+9. Add ``pi`` user to docker group.
+```
+sudo usermod -aG docker pi
+```
+10. Enable and start docker service.
+```
+sudo systemctl enable --now docker.service
+```
+
+Then you can [mount an USB disk](https://www.raspberrypi.org/documentation/configuration/external-storage.md) (or anything else) where store all your stuff.
+
+**Tip**: To extend the life of your SD it is recommended to use a directory of your external storage for the temporary docker directory. Add this line to ``/etc/defaul/docker`` file using your dir:
+```
+export DOCKER_TMPDIR=/path/to/docker/tmp/dir
+```
 
 ## Install
 
 To install plex, transmission and flexget run this steps:
-1. Clone this repo.
+1. Clone this repo and enter in ``plex-rpi`` directory.
 ```
 git clone https://github.com/jmformenti/plex-rpi.git
+cd plex-rpi
 ```
 2. Configure main parameters inside `.env` file.
 	* **UID**. User ID who runs the dockers (typically `pi` user, run `id -u pi`).
@@ -55,7 +74,7 @@ git clone https://github.com/jmformenti/plex-rpi.git
 
 ## Executing
 
-Once installed, just run this command to start all containers:
+Once installed, just run this command (inside *plex-rpi* dir) to start all containers:
 ```
 docker-compose up -d
 ```
@@ -71,13 +90,13 @@ docker-compose down
 ## Accessing
 
 ### Plex
-http://host:32400 
+http://host:32400/web/index.html 
 where `host` is your `NETWORK_PLEX_IP` parameter.
 
 First time you access you'll have to complete the configuration with the setup wizard.
 
 ### Transmission
-http://host:9091/transmission/web 
+http://host:9091/transmission/web/ 
 where `host` is your Pi ip.
 
 ### Flexget
@@ -86,12 +105,12 @@ where `host` is your Pi ip.
 
 ## Troubleshooting
 
-### Flexget is not running
+### Flexget is not accessible
 Check logs to see the problem.
 ```
 docker logs plex-rpi_flextget_1
 ```
-If you see this error "" try to put a more complex password.
+If you see this error "Password 'XXXXX' is not strong enough. Suggestions: Add another word or two. Uncommon words are better." try to put a more complex password.
 
 ### Avoid online transcode video
 
