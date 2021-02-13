@@ -1,103 +1,105 @@
-# Plex sobre Docker en Raspberry
+# Plex over Docker on Raspberry
 
-Con este repo podes crear tu propio server que descarga tus series y peliculas automáticamente, y cuando finaliza, las copia al directorio `media/` donde Plex las encuentra y las agrega a tu biblioteca.
+Build your own [plex](https://www.plex.tv/) server with [transmission](https://transmissionbt.com/) and [flexget](https://flexget.com/) on your Raspberry from scratch.
 
-También agregué un pequeño server samba por si querés compartir los archivos por red
+Transmission media files downloads are automatically published on plex using flexget.
 
-Todo esto es parte de unos tutoriales que estoy subiendo a [Youtube](https://www.youtube.com/playlist?list=PLqRCtm0kbeHCEoCM8TR3VLQdoyR2W1_wv)
+Totally based on peladonerd [video](https://www.youtube.com/watch?v=TqVoHWjz_tI) and his forked repo.
 
-NOTA: Esta repo fue actualizada para correr usando flexget y transmission [en este video](https://youtu.be/TqVoHWjz_tI), podés todavia acceder a la versión vieja (con rtorrent) en la branch [rtorrent](https://github.com/pablokbs/plex-rpi/tree/rtorrent)
+Tested on Raspberry Pi 4.
 
-## Requerimientos iniciales
+## Requirements
 
-Agregar tu usuario (cambiar `kbs` con tu nombre de usuario)
+You need a running Raspberry Pi to install the docker containers.
 
+Here we install the Raspbian 64bits OS. Steps:
+ 
+1. Download latest Raspbian 64bits image from [here](https://downloads.raspberrypi.org/raspios_arm64/images/).
+2. Write the image to an SD card. Recommended: use [Raspberry Pi Imager](https://www.raspberrypi.org/software/) with `Use Custom` option.
+3. Enable ssh by default, adding an file ``ssh`` empty file to the SD card on `bootfs` partition.
+4. Connect the Pi with cable and turn on.
+5. Discover IP from your router and access via ssh. Default user ``pi`` with password ``raspberry``.
+6. Change ``pi`` user password.
 ```
-sudo useradd kbs -G sudo
+passwd
 ```
-
-Agregar esto al sudoers para correr sudo sin password
-
+7. Update the system.
 ```
-%sudo   ALL=(ALL:ALL) NOPASSWD:ALL
+apt update
+apt upgrade
 ```
+Then you can mount an USB disk (or anything else) where store all your stuff.
 
-Agregar esta linea a `sshd_config` para que sólo tu usuario pueda hacer ssh
+## Install
 
+To install plex, transmission and flexget run this steps:
+1. Clone this repo.
 ```
-echo "AllowUsers kbs" | sudo tee -a /etc/ssh/sshd_config
-sudo systemctl enable ssh && sudo systemctl start ssh
+git clone https://github.com/jmformenti/plex-rpi.git
 ```
+2. Configure main parameters inside `.env` file.
+	* **UID**. User ID who runs the dockers (typically `pi` user, run `id -u pi`).
+	* **GID**. Group ID who runs the dockers (typically `pi` group, run `id -g pi`).
+	* **MEDIA**. Root directory where films, series, etc are saved.
+	* **STORAGE**. Root directory for torrents and temporal files.
+	* **NETWORK_SUBNET**. Configure your subnet (for example, 192.168.1.0/24).
+	* **NETWORK_GATEWAY**. Configure your gateway (for example, 192.168.1.1).
+	* **NETWORK_PLEX_IP**. Configure the IP to user for plex server (for example, 192.168.1.3).
+	* **FLEXGET_PWD**. Password for flexget.
+3. Configure transmission password.
+	1. Sets transmission password, `rpc-password` parameter in `transmission/settings.json` file.
+	2. Sets transmission password in flexget, `transmission.pwd` parameter in `flexget/variables.yml` file.
+4. Configure flexget in `flexget/config.yml` as you need. Recommended:
+	1. Add your series in `templates.tv.series.tv`.
+	2. Add your torrent feeds in `tasks`.
 
-Instalar paquetes básicos
+## Executing
 
+Once installed, just run this command to start all containers:
 ```
-sudo apt-get update && sudo apt-get install -y \
-     apt-transport-https \
-     ca-certificates \
-     curl \
-     gnupg2 \
-     software-properties-common \
-     vim \
-     fail2ban \
-     ntfs-3g
-```
-
-Instalar Docker
-
-```
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-sudo apt-key fingerprint 0EBFCD88
-echo "deb [arch=armhf] https://download.docker.com/linux/debian \
-     $(lsb_release -cs) stable" | \
-    sudo tee /etc/apt/sources.list.d/docker.list
-sudo apt-get update && sudo apt-get install -y --no-install-recommends docker-ce docker-compose
-```
-
-Modificá tu docker config para que guarde los temps en el disco:
-
-```
-sudo vim /etc/default/docker
-# Agregar esta linea al final con la ruta de tu disco externo montado
-export DOCKER_TMPDIR="/mnt/storage/docker-tmp"
-```
-
-Agregar tu usuario al grupo docker 
-
-```
-# Add kbs to docker group
-sudo usermod -a -G docker kbs
-#(logout and login)
 docker-compose up -d
 ```
-
-Montar el disco (es necesario ntfs-3g si es que tenes tu disco en NTFS)
-NOTA: en este [link](https://youtu.be/OYAnrmbpHeQ?t=5543) pueden ver la explicación en vivo
-
+To stop all containers run:
 ```
-# usamos la terminal como root porque vamos a ejecutar algunos comandos que necesitan ese modo de ejecución
-sudo su
-# buscamos el disco que querramos montar (por ejemplo la partición sdb1 del disco sdb)
-fdisk -l
-# pueden usar el siguiente comando para obtener el UUID
-ls -l /dev/disk/by-uuid/
-# y simplemente montamos el disco en el archivo /etc/fstab (pueden hacerlo por el editor que les guste o por consola)
-echo UUID="{nombre del disco o UUID que es único por cada disco}" {directorio donde queremos montarlo} (por ejemplo /mnt/storage) ntfs-3g defaults,auto 0 0 | \
-     sudo tee /etc/fstab
-# por último para que lea el archivo fstab
-mount -a (o reiniciar)
+docker-compose stop
+```
+If you want remove all containers run:
+```
+docker-compose down
 ```
 
-## Cómo correrlo
+## Accessing
 
-Simplemente bajate este repo y modificá las rutas de tus archivos en el archivo (oculto) .env, y después corré:
+### Plex
+http://host:32400 
+where `host` is your `NETWORK_PLEX_IP` parameter.
 
-`docker-compose up -d`
+First time you access you'll have to complete the configuration with the setup wizard.
 
-## IMPORTANTE
+### Transmission
+http://host:9091/transmission/web 
+where `host` is your Pi ip.
 
-Las raspberry son computadoras excelentes pero no muy potentes, y plex por defecto intenta transcodear los videos para ahorrar ancho de banda (en mi opinión, una HORRIBLE idea), y la chiquita raspberry no se aguanta este transcodeo "al vuelo", entonces hay que configurar los CLIENTES de plex (si, hay que hacerlo en cada cliente) para que intente reproducir el video en la máxima calidad posible, evitando transcodear y pasando el video derecho a tu tele o Chromecast sin procesar nada, de esta forma, yo he tenido 3 reproducciones concurrentes sin ningún problema. En android y iphone las opciones son muy similares, dejo un screenshot de Android acá:
+### Flexget
+http://host:5050 
+where `host` is your Pi ip.
 
-<img src="https://i.imgur.com/F3kZ9Vh.png" alt="plex" width="400"/>
+## Troubleshooting
 
-Más info acá: https://github.com/pablokbs/plex-rpi/issues/3
+### Flexget is not running
+Check logs to see the problem.
+```
+docker logs plex-rpi_flextget_1
+```
+If you see this error "" try to put a more complex password.
+
+### Avoid online transcode video
+
+By default, plex try to transcode video to save network bandwith but this can put our Pi in troubles. To avoid this you have to configure **all the clients** (web, android, ...) to use max resolution. 
+
+For example in plex web:
+1. Go to `Settings`.
+2. Go to `Quality` section.
+    1. Turn off `Automatically Adjust Quality` check.
+    2. Put `Internet Streaming` to max value.
+    3. Put `Home Streaming` to max value.

@@ -1,3 +1,5 @@
+variables: variables.yml
+
 web_server: yes
 
 schedules:
@@ -17,34 +19,21 @@ templates:
           propers: 12 hours
           quality: 720p
       tv:
-      - Black Mirror
-      - Brooklyn Nine-Nine
-      - Homeland
-      - Luther
-      - Mr Robot
-      - Rick and Morty
-      - SEAL Team
-      - Sherlock
-      - Silicon Valley
-      - Suits
-      - The Flash
-      - The Good Fight
-      - The Walking Dead
-      - Tosh.0
-      - True Detective
-      - Westworld
-
+       - Breaking bad
+       - Westworld
+       - Atypical
+       - Silicon Valley
     transmission:
       host: transmission
       port: 9091
-      username: admin
-      password: "123456"
+      username: '{? transmission.usr ?}'
+      password: '{? transmission.pwd ?}'
 
 tasks:
-  eztvrss:
-    rss: https://eztv.ag/ezrss.xml
-    template: tv
-    priority: 2
+#  yourssfeedname:
+#    rss: rssfeedurl
+#    template: tv
+#    priority: 2
   sort_tv:
     priority: 2
     no_entries_ok: yes
@@ -83,16 +72,16 @@ tasks:
       on_output:
        for_entries: |
          if mediainfo "{{ location }}" | grep EAC3; then
-           mkdir -p "/storage/pelis/{{ movie_name }} ({{ movie_year }})" && ffmpeg -hwaccel auto -y -i "{{ location }}" -map 0 -c:s copy -c:v copy -c:a ac3 -b:a 640k "/storage/pelis/{{ movie_name }} ({{ movie_year }})/{{ movie_name }} ({{ movie_year }}){{ location | pathext }}"
+           mkdir -p "/storage/films/{{ movie_name }} ({{ movie_year }})" && ffmpeg -hwaccel auto -y -i "{{ location }}" -map 0 -c:s copy -c:v copy -c:a ac3 -b:a 640k "/storage/films/{{ movie_name }} ({{ movie_year }})/{{ movie_name }} ({{ movie_year }}){{ location | pathext }}"
          else
-           mkdir -p "/storage/pelis/{{ movie_name }} ({{ movie_year }})" && cp "{{ location }}" "/storage/pelis/{{ movie_name }} ({{ movie_year }})/{{ movie_name }} ({{ movie_year }}){{ location | pathext }}"
+           mkdir -p "/storage/films/{{ movie_name }} ({{ movie_year }})" && cp "{{ location }}" "/storage/films/{{ movie_name }} ({{ movie_year }})/{{ movie_name }} ({{ movie_year }}){{ location | pathext }}"
          fi
   remove_stale_torrents:
     from_transmission:
       host: transmission
       port: 9091
-      username: admin
-      password: "123456"
+      username: '{? transmission.usr ?}'
+      password: '{? transmission.pwd ?}'
     disable: [seen, seen_info_hash]
     if:
       - transmission_progress == 100: accept
@@ -101,6 +90,6 @@ tasks:
     transmission:
       host: transmission
       port: 9091
-      username: admin
-      password: "123456"
+      username: '{? transmission.usr ?}'
+      password: '{? transmission.pwd ?}'
       action: purge
