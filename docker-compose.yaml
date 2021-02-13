@@ -18,7 +18,7 @@ services:
         ipv4_address: ${NETWORK_PLEX_IP}
 
   transmission:
-    image : jaymoulin/transmission
+    image : jaymoulin/transmission:3.00-1.6.1
     user: "${UID}:${GID}"
     command: transmission-daemon -f -g /config
     volumes:
