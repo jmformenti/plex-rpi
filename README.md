@@ -10,9 +10,9 @@ Tested on Raspberry Pi 4.
 
 ## Requirements
 
-You need a running Raspberry Pi where install the docker containers.
+Before starting you need a 64bits OS with docker installed on your Raspberry Pi.
 
-Here we install the Raspbian 64bits OS on our Pi. Steps:
+If not, you can follow this few steps to install and configure the Raspbian 64bits OS on your Pi:
  
 1. Download latest Raspbian 64bits image from [here](https://downloads.raspberrypi.org/raspios_arm64/images/).
 2. Write the image to an SD card. Recommended: use [Raspberry Pi Imager](https://www.raspberrypi.org/software/) with `Use Custom` option.
@@ -23,20 +23,35 @@ Here we install the Raspbian 64bits OS on our Pi. Steps:
 ```
 passwd
 ```
-7. Update the system.
+7. Configure timezone (for example, Europe/Andorra).
+```
+timedatectl set-timezone Europe/Andorra
+```
+8. Configure static IP (for example, asigning 192.168.1.2 as ip in 192.168.1.* network):
+```
+interface eth0
+static ip_address=192.168.1.2/24
+static routers=192.168.1.1
+static domain_name_servers=192.168.1.1
+```
+9. Reboot and access via ssh using the new IP.
+```
+reboot
+```
+10. Update the system.
 ```
 sudo apt update
 sudo apt upgrade
 ```
-8. Install ``docker`` and ``docker-compose``.
+11. Install ``docker`` and ``docker-compose``.
 ```
 sudo apt install docker docker-compose
 ```
-9. Add ``pi`` user to docker group.
+12. Add ``pi`` user to docker group.
 ```
 sudo usermod -aG docker pi
 ```
-10. Enable and start docker service.
+13. Enable and start docker service.
 ```
 sudo systemctl enable --now docker.service
 ```
@@ -108,7 +123,7 @@ where `host` is your Pi ip.
 ### Flexget is not accessible
 Check logs to see the problem.
 ```
-docker logs plex-rpi_flextget_1
+docker logs plex-rpi_flexget_1
 ```
 If you see this error "Password 'XXXXX' is not strong enough. Suggestions: Add another word or two. Uncommon words are better." try to put a more complex password.
 
